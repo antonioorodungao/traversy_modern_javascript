@@ -30,10 +30,16 @@ const itemCtrl = (function () {
     getData: function () {
       return data;
     },
+    updateItem: function (item) {
+      data.items[item.id] = item;
+    },
     insertItem: function (item) {
       item.id = data.items.length;
       console.log(`Pushed ${item.id}  ${item.name}  ${item.calories}`);
       data.items.push(item);
+    },
+    deleteItem: function (index) {
+      data.items.splice(index, 1);
     },
     updateTotalCalories: function () {
       data.total_calories = data.items.reduce((sum, x) => {
@@ -89,6 +95,11 @@ const UICtrl = (function () {
     UIElements.calories.value = current_item.calories;
   };
 
+  const clearfield = function () {
+    UIElements.meal_desc.value = "";
+    UIElements.calories.value = "";
+  };
+
   const editMode = function () {
     UIElements.el_deletebutton.style.display = "inline";
     UIElements.el_updatebutton.style.display = "inline";
@@ -105,15 +116,12 @@ const UICtrl = (function () {
 
   return {
     refreshUIItemList: refreshUIItemsList,
-    clearfield: function () {
-      UIElements.meal_desc.value = "";
-      UIElements.calories.value = "";
-    },
     loadItemForEdit: loadItemForEdit,
     UISelector: UISelector,
     UIElements: UIElements,
     editMode: editMode,
     addMode: addMode,
+    clearfield: clearfield,
   };
 })();
 
@@ -122,6 +130,14 @@ const appCtrl = (function (itemCtrl, UICtrl) {
   UICtrl.UIElements.el_addbutton.addEventListener("click", handleAddEvent);
   UICtrl.UIElements.el_list_items.addEventListener("click", handleItemEdit);
   UICtrl.UIElements.el_btn_back.addEventListener("click", handleBackButton);
+  UICtrl.UIElements.el_updatebutton.addEventListener(
+    "click",
+    handleUpdateEvent
+  );
+  UICtrl.UIElements.el_deletebutton.addEventListener(
+    "click",
+    handleDeleteEvent
+  );
 
   function handleItemEdit(e) {
     if (e.target.classList.contains("edit-item")) {
@@ -132,10 +148,31 @@ const appCtrl = (function (itemCtrl, UICtrl) {
       UICtrl.loadItemForEdit(itemCtrl.current_item);
       UICtrl.editMode();
       e.preventDefault();
-
-      //refresh the edit field
-      //display the edit buttons
     }
+  }
+
+  function handleUpdateEvent(e) {
+    console.log("Update Event is clicked");
+    itemCtrl.updateItem(
+      new itemCtrl.Item(
+        itemCtrl.current_item.id,
+        UICtrl.UIElements.meal_desc.value,
+        UICtrl.UIElements.calories.value
+      )
+    );
+    data = itemCtrl.getData();
+    UICtrl.refreshUIItemList(data.items, data.total_calories);
+    UICtrl.clearfield();
+    UICtrl.addMode();
+  }
+
+  function handleDeleteEvent(e) {
+    console.log("Delete is clicked");
+    itemCtrl.deleteItem(itemCtrl.current_item.id);
+    data = itemCtrl.getData();
+    UICtrl.refreshUIItemList(data.items, data.total_calories);
+    UICtrl.clearfield();
+    UICtrl.addMode();
   }
 
   function handleAddEvent(e) {
@@ -155,6 +192,7 @@ const appCtrl = (function (itemCtrl, UICtrl) {
     UICtrl.refreshUIItemList(data.items, data.total_calories);
     UICtrl.clearfield();
     e.preventDefault();
+    UICtrl.addMode();
   }
 
   function handleBackButton(e) {
